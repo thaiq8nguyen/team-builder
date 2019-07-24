@@ -29702,57 +29702,57 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.roles = exports.departments = void 0;
 const departments = [{
-  department_id: "0",
+  department_id: "1",
   department_name: "Accounting"
 }, {
-  department_id: "1",
+  department_id: "2",
   department_name: "Finance"
 }, {
-  department_id: "2",
+  department_id: "3",
   department_name: "Technology"
 }, {
-  department_id: "3",
+  department_id: "4",
   department_name: "Quality Control"
 }, {
-  department_id: "4",
+  department_id: "5",
   department_name: "Shipping"
 }];
 exports.departments = departments;
 const roles = [{
-  role_id: "0",
-  department_id: "2",
+  role_id: "1",
+  department_id: "3",
   role_name: "Frontend"
 }, {
-  role_id: "1",
-  department_id: "2",
+  role_id: "2",
+  department_id: "3",
   role_name: "Backend"
 }, {
-  role_id: "2",
-  department_id: "2",
+  role_id: "3",
+  department_id: "3",
   role_name: "User Interface"
 }, {
-  role_id: "3",
-  department_id: "2",
-  role_name: "Security"
-}, {
   role_id: "4",
-  department_id: "0",
-  role_name: "Analyst"
+  department_id: "3",
+  role_name: "Security"
 }, {
   role_id: "5",
   department_id: "1",
-  role_name: "Underwriter"
+  role_name: "Analyst"
 }, {
   role_id: "6",
-  department_id: "3",
-  role_name: "QC Manager"
+  department_id: "2",
+  role_name: "Underwriter"
 }, {
   role_id: "7",
   department_id: "4",
+  role_name: "QC Manager"
+}, {
+  role_id: "8",
+  department_id: "5",
   role_name: "Shipping Lead"
 }];
 exports.roles = roles;
-},{}],"../components/AddMember/AddMember.js":[function(require,module,exports) {
+},{}],"../components/Form/Form.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29766,50 +29766,113 @@ var _company_data = require("../../company_data");
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-const AddMember = () => {
+const Form = ({
+  members,
+  memberToEditID,
+  refresh
+}) => {
+  const [isEditing, setIsEditting] = (0, _react.useState)(false);
   const [member, setMember] = (0, _react.useState)({
+    memberID: "",
     firstName: "",
     lastName: "",
     phone: "",
     email: "",
-    departmentID: "1",
-    roleID: "0",
-    workLocation: ""
+    departmentID: 1,
+    roleID: 0,
+    workLocation: "Remote"
   });
+  const defaultMember = {
+    memberID: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    departmentID: 1,
+    roleID: 0,
+    workLocation: "On-Site"
+  };
   const [departmentRoles, setDepartmentRoles] = (0, _react.useState)([]);
   const radioInputStyles = {
     marginRight: "5px"
   };
+  (0, _react.useEffect)(() => {
+    if (memberToEditID > 0) {
+      setIsEditting(true);
+
+      if (members.length > 0) {
+        const memberToEdit = members.find(member => member.memberID === memberToEditID);
+        setMember(memberToEdit);
+      }
+    }
+  }, [members, member.memberID, memberToEditID]);
+  (0, _react.useEffect)(() => {
+    const departmentRoles = _company_data.roles.filter(role => {
+      return role.department_id === member.departmentID;
+    });
+
+    setDepartmentRoles(departmentRoles);
+  }, [member.departmentID]);
 
   const handleInput = event => {
-    //event.persist();
     setMember({ ...member,
       [event.target.name]: event.target.value
     });
   };
 
-  const handleDepartmentInput = event => {
-    handleInput(event);
-    const departmentID = event.target.value;
-
-    const departmentRoles = _company_data.roles.filter(role => {
-      return role.department_id === departmentID;
-    });
-
-    setDepartmentRoles(departmentRoles);
-  };
-
   const handleSubmit = event => {
     event.preventDefault();
     const members = JSON.parse(localStorage.getItem("members") || "[]");
-    members.push(member);
-    localStorage.setItem("members", JSON.stringify(members));
+    let newMembersArray = [];
+
+    if (!isEditing) {
+      newMembersArray = addMember(members);
+    } else {
+      newMembersArray = editMember(members);
+    }
+
+    localStorage.setItem("members", JSON.stringify(newMembersArray));
+    refresh();
+    resetForm();
   };
 
-  console.log(member);
+  const addMember = members => {
+    member.memberID = generateMemberID(members);
+    members.push(member);
+    return members;
+  };
+
+  const editMember = members => {
+    const memberIndex = members.findIndex(member => member.memberID === memberToEditID);
+    members[memberIndex] = member;
+    setIsEditting(false);
+    return members;
+  };
+
+  const generateMemberID = members => {
+    let maxMemberID = 1;
+
+    if (members.length > 0) {
+      maxMemberID = members[0].memberID;
+      members.forEach(member => {
+        member.memberID > maxMemberID ? maxMemberID = member.memberID : null;
+      });
+      maxMemberID = maxMemberID + 1;
+    }
+
+    return maxMemberID;
+  };
+
+  const resetForm = () => {
+    console.log("reset");
+    setMember(defaultMember);
+  };
+
   return _react.default.createElement("div", {
     className: "notification"
-  }, _react.default.createElement("form", {
+  }, isEditing && _react.default.createElement("p", {
+    className: "has-text-info is-size-4"
+  }, "Editing"), _react.default.createElement("form", {
     action: "#",
     onSubmit: handleSubmit
   }, _react.default.createElement("div", {
@@ -29885,7 +29948,7 @@ const AddMember = () => {
     className: "select"
   }, _react.default.createElement("select", {
     value: member.departmentID,
-    onChange: handleDepartmentInput,
+    onChange: handleInput,
     name: "departmentID"
   }, _react.default.createElement("option", null, "--Select--"), _company_data.departments.map(department => _react.default.createElement("option", {
     value: department.department_id,
@@ -29921,7 +29984,8 @@ const AddMember = () => {
     name: "workLocation",
     style: radioInputStyles,
     onChange: handleInput,
-    value: "Remote"
+    value: "Remote",
+    checked: member.workLocation === "Remote"
   }), "Remote"), _react.default.createElement("label", {
     className: "radio"
   }, _react.default.createElement("input", {
@@ -29929,7 +29993,8 @@ const AddMember = () => {
     name: "workLocation",
     style: radioInputStyles,
     onChange: handleInput,
-    value: "On-Site"
+    value: "On-Site",
+    checked: member.workLocation === "On-Site"
   }), "On-Site"))))), _react.default.createElement("div", {
     className: "field is-grouped"
   }, _react.default.createElement("div", {
@@ -29944,7 +30009,7 @@ const AddMember = () => {
   }, "Cancel")))));
 };
 
-var _default = AddMember;
+var _default = Form;
 exports.default = _default;
 },{"react":"../../node_modules/react/index.js","../../company_data":"../company_data.js"}],"../components/Members/Members.js":[function(require,module,exports) {
 "use strict";
@@ -29954,42 +30019,40 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _react = _interopRequireWildcard(require("react"));
+var _react = _interopRequireDefault(require("react"));
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const Members = () => {
-  const [members, setMembers] = (0, _react.useState)([]);
+const Members = ({
+  members,
+  editMember
+}) => {
+  console.log(members);
   const buttonStyles = {
     margin: "0 5px"
   };
-  (0, _react.useEffect)(() => {
-    const getAllMembers = () => {
-      if (localStorage.getItem("members")) {
-        setMembers(JSON.parse(localStorage.getItem("members")));
-      }
-    };
 
-    getAllMembers();
-  }, []);
-  console.log(members);
+  const handleEditMember = memberID => {
+    editMember(memberID);
+  };
+
+  const handleDeleteMember = memberID => {};
+
   return _react.default.createElement("div", {
     className: "notification"
   }, _react.default.createElement("table", {
     className: "table is-fullwidth is-hoverable"
   }, _react.default.createElement("thead", null, _react.default.createElement("tr", null, _react.default.createElement("th", null, "No."), _react.default.createElement("th", null, "Name"), _react.default.createElement("th", null, "Last Name"), _react.default.createElement("th", null, "Phone"), _react.default.createElement("th", null, "Email"), _react.default.createElement("th", null, "Department"), _react.default.createElement("th", null, "Role"), _react.default.createElement("th", null, "Work Loc."), _react.default.createElement("th", {
     className: "has-text-centered"
-  }, "Actions"))), _react.default.createElement("tbody", null, members.map((member, index) => _react.default.createElement("tr", {
-    key: index
-  }, _react.default.createElement("th", null, index), _react.default.createElement("td", null, member.firstName), _react.default.createElement("td", null, member.lastName), _react.default.createElement("td", null, member.phone), _react.default.createElement("td", null, member.email), _react.default.createElement("td", null, member.departmentID), _react.default.createElement("td", null, member.roleID), _react.default.createElement("td", null, member.workLocation), _react.default.createElement("td", {
+  }, "Actions"))), _react.default.createElement("tbody", null, members.map(member => _react.default.createElement("tr", {
+    key: member.memberID
+  }, _react.default.createElement("th", null, member.memberID), _react.default.createElement("td", null, member.firstName), _react.default.createElement("td", null, member.lastName), _react.default.createElement("td", null, member.phone), _react.default.createElement("td", null, member.email), _react.default.createElement("td", null, member.departmentID), _react.default.createElement("td", null, member.roleID), _react.default.createElement("td", null, member.workLocation), _react.default.createElement("td", {
     className: "has-text-centered"
   }, _react.default.createElement("button", {
     className: "button is-info",
-    style: buttonStyles
-  }, "Edit"), _react.default.createElement("button", {
-    className: "button is-danger",
-    style: buttonStyles
-  }, "Delete"))))), _react.default.createElement("tfoot", null)));
+    style: buttonStyles,
+    onClick: () => handleEditMember(member.memberID)
+  }, "Edit"))))), _react.default.createElement("tfoot", null)));
 };
 
 var _default = Members;
@@ -30002,15 +30065,37 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _react = _interopRequireDefault(require("react"));
+var _react = _interopRequireWildcard(require("react"));
 
-var _AddMember = _interopRequireDefault(require("../../components/AddMember/AddMember"));
+var _Form = _interopRequireDefault(require("../../components/Form/Form"));
 
 var _Members = _interopRequireDefault(require("../../components/Members/Members"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
 const Home = () => {
+  const [members, setMembers] = (0, _react.useState)([]);
+  const [memberToEditID, setMemberToEditID] = (0, _react.useState)(0);
+  const [refreshData, setRefreshData] = (0, _react.useState)(false);
+  (0, _react.useEffect)(() => {
+    const getAllMembers = () => {
+      const storedMembers = JSON.parse(localStorage.getItem("members") || "[]");
+      setMembers(storedMembers);
+    };
+
+    getAllMembers();
+  }, [refreshData]);
+
+  const handleRefreshData = () => {
+    setRefreshData(!refreshData);
+
+    if (memberToEditID > 0) {
+      setMemberToEditID(0);
+    }
+  };
+
   return _react.default.createElement("div", null, _react.default.createElement("section", {
     className: "section"
   }, _react.default.createElement("div", {
@@ -30023,16 +30108,23 @@ const Home = () => {
     className: "card-header-title"
   }, "Add Member")), _react.default.createElement("div", {
     className: "card-content"
-  }, _react.default.createElement(_AddMember.default, null))))), _react.default.createElement("section", {
+  }, _react.default.createElement(_Form.default, {
+    members: members,
+    memberToEditID: memberToEditID,
+    refresh: handleRefreshData
+  }))))), _react.default.createElement("section", {
     className: "section"
   }, _react.default.createElement("div", {
     className: "container"
-  }, _react.default.createElement(_Members.default, null))));
+  }, _react.default.createElement(_Members.default, {
+    members: members,
+    editMember: memberID => setMemberToEditID(memberID)
+  }))));
 };
 
 var _default = Home;
 exports.default = _default;
-},{"react":"../../node_modules/react/index.js","../../components/AddMember/AddMember":"../components/AddMember/AddMember.js","../../components/Members/Members":"../components/Members/Members.js"}],"../App.js":[function(require,module,exports) {
+},{"react":"../../node_modules/react/index.js","../../components/Form/Form":"../components/Form/Form.js","../../components/Members/Members":"../components/Members/Members.js"}],"../App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

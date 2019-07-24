@@ -1,57 +1,124 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { departments, roles } from "../../company_data";
 
-const AddMember = () => {
+const Form = ({ members, memberToEditID, refresh }) => {
+  const [isEditing, setIsEditting] = useState(false);
+
   const [member, setMember] = useState({
+    memberID: "",
     firstName: "",
     lastName: "",
     phone: "",
     email: "",
-    departmentID: "1",
-    roleID: "0",
-    workLocation: ""
+    departmentID: 1,
+    roleID: 0,
+    workLocation: "Remote"
   });
+
+  const defaultMember = {
+    memberID: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    departmentID: 1,
+    roleID: 0,
+    workLocation: "On-Site"
+  };
 
   const [departmentRoles, setDepartmentRoles] = useState([]);
 
   const radioInputStyles = {
     marginRight: "5px"
   };
+  useEffect(() => {
+    if (memberToEditID > 0) {
+      setIsEditting(true);
+
+      if (members.length > 0) {
+        const memberToEdit = members.find(
+          member => member.memberID === memberToEditID
+        );
+
+        setMember(memberToEdit);
+      }
+    }
+  }, [members, member.memberID, memberToEditID]);
+
+  useEffect(() => {
+    const departmentRoles = roles.filter(role => {
+      return role.department_id === member.departmentID;
+    });
+
+    setDepartmentRoles(departmentRoles);
+  }, [member.departmentID]);
 
   const handleInput = event => {
-    //event.persist();
-
     setMember({
       ...member,
       [event.target.name]: event.target.value
     });
   };
 
-  const handleDepartmentInput = event => {
-    handleInput(event);
-
-    const departmentID = event.target.value;
-
-    const departmentRoles = roles.filter(role => {
-      return role.department_id === departmentID;
-    });
-
-    setDepartmentRoles(departmentRoles);
-  };
-
   const handleSubmit = event => {
     event.preventDefault();
 
     const members = JSON.parse(localStorage.getItem("members") || "[]");
+    let newMembersArray = [];
+
+    if (!isEditing) {
+      newMembersArray = addMember(members);
+    } else {
+      newMembersArray = editMember(members);
+    }
+
+    localStorage.setItem("members", JSON.stringify(newMembersArray));
+
+    refresh();
+    resetForm();
+  };
+
+  const addMember = members => {
+    member.memberID = generateMemberID(members);
 
     members.push(member);
 
-    localStorage.setItem("members", JSON.stringify(members));
+    return members;
   };
 
-  console.log(member);
+  const editMember = members => {
+    const memberIndex = members.findIndex(
+      member => member.memberID === memberToEditID
+    );
+
+    members[memberIndex] = member;
+    setIsEditting(false);
+    return members;
+  };
+
+  const generateMemberID = members => {
+    let maxMemberID = 1;
+
+    if (members.length > 0) {
+      maxMemberID = members[0].memberID;
+      members.forEach(member => {
+        member.memberID > maxMemberID ? (maxMemberID = member.memberID) : null;
+      });
+
+      maxMemberID = maxMemberID + 1;
+    }
+
+    return maxMemberID;
+  };
+
+  const resetForm = () => {
+    console.log("reset");
+    setMember(defaultMember);
+  };
+
   return (
     <div className="notification">
+      {isEditing && <p className="has-text-info is-size-4">Editing</p>}
       <form action="#" onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="firstName" className="label">
@@ -126,7 +193,7 @@ const AddMember = () => {
                 <div className="select">
                   <select
                     value={member.departmentID}
-                    onChange={handleDepartmentInput}
+                    onChange={handleInput}
                     name="departmentID"
                   >
                     <option>--Select--</option>
@@ -182,6 +249,7 @@ const AddMember = () => {
                     style={radioInputStyles}
                     onChange={handleInput}
                     value="Remote"
+                    checked={member.workLocation === "Remote"}
                   />
                   Remote
                 </label>
@@ -192,6 +260,7 @@ const AddMember = () => {
                     style={radioInputStyles}
                     onChange={handleInput}
                     value="On-Site"
+                    checked={member.workLocation === "On-Site"}
                   />
                   On-Site
                 </label>
@@ -214,4 +283,4 @@ const AddMember = () => {
   );
 };
 
-export default AddMember;
+export default Form;

@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-const Members = () => {
-  const [members, setMembers] = useState([]);
+const Members = ({ members, editMember }) => {
+  console.log(members);
+
   const buttonStyles = {
     margin: "0 5px"
   };
-  useEffect(() => {
-    const getAllMembers = () => {
-      if (localStorage.getItem("members")) {
-        setMembers(JSON.parse(localStorage.getItem("members")));
-      }
-    };
 
-    getAllMembers();
-  }, []);
+  const handleEditMember = memberID => {
+    editMember(memberID);
+  };
 
-  console.log(members);
+  const handleDeleteMember = memberID => {};
 
   return (
     <div className="notification">
@@ -34,9 +30,9 @@ const Members = () => {
           </tr>
         </thead>
         <tbody>
-          {members.map((member, index) => (
-            <tr key={index}>
-              <th>{index}</th>
+          {members.map(member => (
+            <tr key={member.memberID}>
+              <th>{member.memberID}</th>
               <td>{member.firstName}</td>
               <td>{member.lastName}</td>
               <td>{member.phone}</td>
@@ -45,12 +41,16 @@ const Members = () => {
               <td>{member.roleID}</td>
               <td>{member.workLocation}</td>
               <td className="has-text-centered">
-                <button className="button is-info" style={buttonStyles}>
+                <button
+                  className="button is-info"
+                  style={buttonStyles}
+                  onClick={() => handleEditMember(member.memberID)}
+                >
                   Edit
                 </button>
-                <button className="button is-danger" style={buttonStyles}>
+                {/* <button className="button is-danger" style={buttonStyles}>
                   Delete
-                </button>
+                </button> */}
               </td>
             </tr>
           ))}
